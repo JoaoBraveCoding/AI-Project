@@ -73,7 +73,7 @@
   (return-from tabuleiro-topo-preenchido-p nil)
   )
 
-;;tabuleiros-iguais-p: tabuleiro x tabuleiro ->logico
+;;tabuleiros-iguais-p: tabuleiro x tabuleiro -> logico
 (defun tabuleiros-iguais-p (tabuleiro1 tabuleiro2)
   (loop for i from 0 to 9
         do(loop for j from 0 to 17
@@ -82,4 +82,38 @@
         )
   )
   (return-from tabuleiros-iguais-p t)
-)
+  )
+
+;;tabuleiro->array: tabuleiro -> array
+(defun tabuleiro->array(tabuleiro)
+  (let ((array (make-array '(18 10))))
+    (setf array  (copia-tabuleiro tabuleiro))
+    (return-from tabuleiro->array array)))
+
+;;array->tabuleiro: array -> tabuleiro
+(defun array->tabuleiro(array)
+  (let ((tabuleiro (cria-tabuleiro)))
+    (loop for i from 0 to 17
+          do(loop for j from 0 to 9
+                  do(cond((eq (aref array i j) t) (tabuleiro-preenche! tabuleiro i j)))))
+  (return-from array->tabuleiro tabuleiro)))
+
+;;2.1.3 Tipo Estado
+
+;;struct estado
+(defstruct estado (pontos :0) pecas-por-colocar pecas-colocadas tabuleiro)
+
+;;copia-estado: estado -> estado
+#|(defun copia-estado (estado)
+  (let ((estadoNovo (make-estado))
+        (list-pecas-por-colocar (make-list (lenght estado-pecas-por-colocar)))
+        (list-pecas-colocadas (make-list (lenght estado-pecas-colocadas))))
+    (setf estadoNovo-pontos estado-pontos)
+    (loop for i from 0 to (length estado-pecas-por-colocar)
+          do(setf (nth i list-pecas-por-colocar)  (nth i estado-pecas-por-colocar)))
+    (setf estadoNovo-pecas-por-colocar list-pecas-por-colocar)
+    (loop for i from 0 to (length estado-pecas-colocadas)
+          do(setf (nth i list-pecas-colocadas)  (nth i estado-pecas-colocadas)))
+    (setf estadoNovo-pecas-colocadas list-pecas-colocadas)
+(setf estadoNovo-tabueiro (copia-tabuleiro estado-tabuleiro))))|#
+
