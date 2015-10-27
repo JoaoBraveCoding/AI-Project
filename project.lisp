@@ -1,3 +1,4 @@
+
 ;;2.1.1 Tipos de Accao
 
 ;;cria-accao: inteiro x array -> accao
@@ -33,7 +34,7 @@
 ;;tabuleiro-altura-coluna: tabuleiro x inteiro -> inteiro
 (defun tabuleiro-altura-coluna (tabuleiro inteiro)
   (loop for i from 0 to 17
-        do(cond ((eq (aref tabuleiro (- 17 i) inteiro) t) (return-from tabuleiro-altura-coluna (- 18 i)))
+        do(cond ((eql (aref tabuleiro (- 17 i) inteiro) t) (return-from tabuleiro-altura-coluna (- 18 i)))
           )
         )
   (return-from tabuleiro-altura-coluna 0)
@@ -42,7 +43,7 @@
 ;;tabuleiro-linha-completa-p: tabuleiro x inteiro -> logico
 (defun tabuleiro-linha-completa-p (tabuleiro inteiro)
   (loop for i from 0 to 9
-        do(cond ((eq (aref tabuleiro inteiro i) nil) (return-from tabuleiro-linha-completa-p nil))
+        do(cond ((eql (aref tabuleiro inteiro i) nil) (return-from tabuleiro-linha-completa-p nil))
                 )
         )
   (return-from tabuleiro-linha-completa-p t)
@@ -67,7 +68,7 @@
 ;;tabuleiro-topo-preenchido-p: tabuleiro -> logico
 (defun tabuleiro-topo-preenchido-p (tabuleiro)
   (loop for i from 0 to 9
-        do(cond ((eq (aref tabuleiro 17 i) t) (return-from tabuleiro-topo-preenchido-p t))
+        do(cond ((eql (aref tabuleiro 17 i) t) (return-from tabuleiro-topo-preenchido-p t))
                 )
         )
   (return-from tabuleiro-topo-preenchido-p nil)
@@ -77,7 +78,7 @@
 (defun tabuleiros-iguais-p (tabuleiro1 tabuleiro2)
   (loop for i from 0 to 9
         do(loop for j from 0 to 17
-                do(cond((not(eq (aref tabuleiro1 j i) (aref tabuleiro2 j i))) (return-from tabuleiros-iguais-p nil))
+                do(cond((not(eql (aref tabuleiro1 j i) (aref tabuleiro2 j i))) (return-from tabuleiros-iguais-p nil))
                   )
         )
   )
@@ -95,7 +96,7 @@
   (let ((tabuleiro (cria-tabuleiro)))
     (loop for i from 0 to 17
           do(loop for j from 0 to 9
-                  do(cond((eq (aref array i j) t) (tabuleiro-preenche! tabuleiro i j)))))
+                  do(cond((eql (aref array i j) t) (tabuleiro-preenche! tabuleiro i j)))))
   (return-from array->tabuleiro tabuleiro)))
 
 ;;2.1.3 Tipo Estado
@@ -104,16 +105,51 @@
 (defstruct estado (pontos :0) pecas-por-colocar pecas-colocadas tabuleiro)
 
 ;;copia-estado: estado -> estado
-#|(defun copia-estado (estado)
-  (let ((estadoNovo (make-estado))
-        (list-pecas-por-colocar (make-list (lenght estado-pecas-por-colocar)))
-        (list-pecas-colocadas (make-list (lenght estado-pecas-colocadas))))
-    (setf estadoNovo-pontos estado-pontos)
-    (loop for i from 0 to (length estado-pecas-por-colocar)
-          do(setf (nth i list-pecas-por-colocar)  (nth i estado-pecas-por-colocar)))
-    (setf estadoNovo-pecas-por-colocar list-pecas-por-colocar)
-    (loop for i from 0 to (length estado-pecas-colocadas)
-          do(setf (nth i list-pecas-colocadas)  (nth i estado-pecas-colocadas)))
-    (setf estadoNovo-pecas-colocadas list-pecas-colocadas)
-(setf estadoNovo-tabueiro (copia-tabuleiro estado-tabuleiro))))|#
+(defun copia-estado (estado)
+    (copy-estado estado))
+
+;;estados-iguais-p: estado x estado -> logico
+(defun estados-iguais-p (estado1 estado2)
+  (cond ((not (eql (estado-pontos estado1) (estado-pontos estado2))) nil)
+        ((not (tabuleiros-iguais-p (estado-tabuleiro estado1) (estado-tabuleiro estado2))) nil)
+        ((not (equal (estado-pecas-por-colocar estado1) (estado-pecas-por-colocar estado2))) nil)
+        ((not (equal (estado-pecas-colocadas estado1) (estado-pecas-colocadas estado2))) nil)
+        (t t)))
+
+;;estado-final-p: estado -> logico
+(defun estado-final-p (estado)
+  (cond ((tabuleiro-topo-preenchido-p (estado-tabuleiro estado)) t )
+        ((equal (estado-pecas-colocadas estado) nil) t)))
+
+;;2.1.4 Tipo problema
+
+;;struct problema
+(defstruct problema estado-inicial solucao accoes resultado custo-caminho)
+
+;;2.2 Funcoes a implementar
+;;2.2.1 Funcoes do problema de procura
+
+;;solucao: estado -> logico
+(defun solucao(estado)
+  (cond ((tabuleiro-topo-preenchido-p (estado-tabuleiro estado)) nil)
+        ((equal (estado-pecas-por-colocar estado) nil) t)))
+
+;;accoes: estado -> lista de accoes
+;;TODO
+
+;;resultado: estado x accao -> estado
+;;Comecamos a fazer esta funcao mas tivemos de parar
+#|(defun resultado(estado accao)
+  (let ((estadoNovo (copia-estado estado)))
+    (setf (estado-pecas-colocadas estadoNovo) (append (list (first (estado-pecas-por-colocar estado))) (estado-pecas-colocadas estado)))
+    (setf (estado-pecas-por-colocar estadoNovo) (rest (estado-pecas-por-colocar estado)))
+    percorrer coluna ate encontrar 1º espaco vazio antes de um espaco ocupado para comecar a colocar a peca
+    ))|#
+
+
+;;qualidade: estado->inteiro
+;;TODO
+
+;;custo-oportunidade: estado -> inteiro
+;;TODO
 
