@@ -147,6 +147,8 @@
 
 ;;accoes: estado -> lista de accoes
 ;;TODO
+(defun accoes (estado)
+  (let ((listaDeAccoes  ))))
 
 ;;resultado: estado x accao -> estado
 ;;Comecamos a fazer esta funcao mas tivemos de parar
@@ -162,11 +164,11 @@
           (rest (estado-pecas-por-colocar estado)))
     (loop for i from 0 to (1- (array-dimension peca 0))
           do (loop for j from 0 to (1- (array-dimension peca 1))
-                   do(when (aref peca i j) (tabuleiro-preenche! (estado-tabuleiro estado) (+ i linha) (+ j coluna)))))
-    (if (tabuleiro-topo-preenchido-p (estado-tabuleiro estado))
+                   do(when (aref peca i j) (tabuleiro-preenche! (estado-tabuleiro estadoNovo) (+ i linha) (+ j coluna)))))
+    (if (tabuleiro-topo-preenchido-p (estado-tabuleiro estadoNovo))
         (return-from resultado estadoNovo)
       (loop for i from 0 to 17
-            do(when (tabuleiro-linha-completa-p (estado-tabuleiro estado) (- 17 i)) (progn (tabuleiro-remove-linha! (estado-tabuleiro estado) (- 17 i)) (setf nrLinhasRem (1+ nrLinhasRem))))))
+            do(when (tabuleiro-linha-completa-p (estado-tabuleiro estadoNovo) (- 17 i)) (progn (tabuleiro-remove-linha! (estado-tabuleiro estadoNovo) (- 17 i)) (setf nrLinhasRem (1+ nrLinhasRem))))))
     (cond ((eql nrLinhasRem 0 ) (setf (estado-pontos estadoNovo) (+ (estado-pontos estado) 0)))
           ((eql nrLinhasRem 1 ) (setf (estado-pontos estadoNovo) (+ (estado-pontos estado) 100)))
           ((eql nrLinhasRem 2 ) (setf (estado-pontos estadoNovo) (+ (estado-pontos estado) 300)))
