@@ -27,7 +27,7 @@
 
 ;;copia-tabuleiro: tabuleiro -> tabuleiro
 (defun copia-tabuleiro (tabuleiro)
-    (let ((tabuleiroNovo (make-array '(18 10))))
+    (let ((tabuleiroNovo (cria-tabuleiro)))
           (loop for i from 0 to 17
                 do(loop for j from 0 to 9
                         do(setf (aref tabuleiroNovo i j) (aref tabuleiro i j))))
@@ -35,7 +35,7 @@
 
 ;;tabuleiro-preenchido-p: tabuleiro x inteiro -> logico
 (defun tabuleiro-preenchido-p (tabuleiro inteiroLinha inteiroColuna)
-  (aref tabuleiro inteiroLinha inteiroColuna))
+  (when (and (<= inteiroLinha 17) (<= inteiroColuna 9)) (aref tabuleiro inteiroLinha inteiroColuna)))
 
 ;;tabuleiro-altura-coluna: tabuleiro x inteiro -> inteiro
 (defun tabuleiro-altura-coluna (tabuleiro inteiro)
@@ -57,8 +57,7 @@
 
 ;;tabuleiro-preenche!: tabuleiro inteiro inteiro -> {}
 (defun tabuleiro-preenche! (tabuleiro inteiroLinha inteiroColuna)
-  (setf (aref tabuleiro inteiroLinha inteiroColuna) t)
-  )
+  (when (and (<= inteiroLinha 17) (<= inteiroColuna 9)) (setf (aref tabuleiro inteiroLinha inteiroColuna) t)))
 
 ;;tabuleiro-remove-linha!: tabuleiro inteiro -> {}
 (defun tabuleiro-remove-linha! (tabuleiro inteiro)
@@ -112,20 +111,25 @@
 
 ;;copia-estado: estado -> estado
 (defun copia-estado (estado)
-    (copy-estado estado))
+  (let ((estadoNovo (make-estado :pontos (estado-pontos estado) :pecas-por-colocar (make-list (length (estado-pecas-por-colocar estado))) :pecas-colocadas (make-list (length (estado-pecas-colocadas estado))) :tabuleiro (copia-tabuleiro (estado-tabuleiro estado)))))
+    (loop for i from 0 to (1- (length (estado-pecas-por-colocar estado)))
+          do(setf (nth i (estado-pecas-por-colocar estadoNovo)) (nth i (estado-pecas-por-colocar estado))))
+    (loop for i from 0 to (1- (length (estado-pecas-colocadas estado)))
+          do(setf (nth i (estado-pecas-colocadas estadoNovo)) (nth i (estado-pecas-colocadas estado))))
+   (return-from copia-estado estadoNovo)))
 
 ;;estados-iguais-p: estado x estado -> logico
 (defun estados-iguais-p (estado1 estado2)
   (cond ((not (eql (estado-pontos estado1) (estado-pontos estado2))) nil)
         ((not (tabuleiros-iguais-p (estado-tabuleiro estado1) (estado-tabuleiro estado2))) nil)
-        ((not (eql (estado-pecas-por-colocar estado1) (estado-pecas-por-colocar estado2))) nil)
-        ((not (eql (estado-pecas-colocadas estado1) (estado-pecas-colocadas estado2))) nil)
+        ((not (equal (estado-pecas-por-colocar estado1) (estado-pecas-por-colocar estado2))) nil)
+        ((not (equal (estado-pecas-colocadas estado1) (estado-pecas-colocadas estado2))) nil)
         (t t)))
 
 ;;estado-final-p: estado -> logico
 (defun estado-final-p (estado)
-  (cond ((tabuleiro-topo-preenchido-p (estado-tabuleiro estado)) t )
-        ((eql (estado-pecas-por-colocar estado) nil) t)
+  (cond ((tabuleiro-topo-preenchido-p (estado-tabuleiro estado)) t)
+        ((equal (estado-pecas-por-colocar estado) nil) t)
         (t nil)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 2.1.4 TIPO PROBLEMA
