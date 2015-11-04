@@ -171,13 +171,12 @@
         (nomePeca (string "peca-"))
         (nomePecaSym nil))
     (setf nrOrient (gethash peca orientations))
-    (princ nrOrient)
     (setf nomePeca (concatenate 'string nomePeca peca))
     (loop for i from 0 to (1- nrOrient)
           do(progn (setf nomePecaSym (eval (read-from-string (concatenate 'string nomePeca (write-to-string i)))))
                    (loop for j from 0 to (- 10 (array-dimension nomePecaSym 1))
-                         do(when (tenta-colocar-peca nomePecaSym (estado-tabuleiro estado) j) (setf listaDeAccoes (append listaDeAccoes (cria-accao j nomePecaSym)))))))
-   (return-from accoes listaDeAccoes)))
+                         do(when (tenta-colocar-peca nomePecaSym (estado-tabuleiro estado) j) (setf listaDeAccoes (append listaDeAccoes (list (cria-accao j  nomePecaSym))))))))
+   (return-from accoes (rest listaDeAccoes))))
 
 ;;resultado: estado x accao -> estado
 (defun resultado(estado accao)
@@ -222,4 +221,4 @@
     (return-from custo-oportunidade (- pontuacaoMaxima (estado-pontos estado)))))
 
 ;;(load (compile-file "utils.lisp"))
-;;(load "utils.fas")
+(load "utils.fas")
