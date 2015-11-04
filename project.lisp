@@ -145,13 +145,41 @@
   (cond ((tabuleiro-topo-preenchido-p (estado-tabuleiro estado)) nil)
         ((equal (estado-pecas-por-colocar estado) nil) t)))
 
+;;hash table para as posicoes das pecas
+(defparameter orientations (make-hash-table :test 'equalp))
+(setf (gethash "I" orientations) 2)
+(setf (gethash "L" orientations) 4)
+(setf (gethash "J" orientations) 4)
+(setf (gethash "O" orientations) 1)
+(setf (gethash "S" orientations) 2)
+(setf (gethash "Z" orientations) 2)
+(setf (gethash "T" orientations) 4)
+
+;;tenta-colocar-peca: array array inteiro -> logico
+(defun tenta-colocar-peca (peca tabuleiro coluna)
+  (let ((alturaColuna  (tabuleiro-altura-coluna tabuleiro coluna)))
+    (loop for i from 0 to (1- (array-dimension peca 0))
+          do(loop for j from 0 to (1- (array-dimension peca 1))
+                  do(when (and (tabuleiro-preenchido-p tabuleiro (+ i alturaColuna) (+ j coluna)) (aref peca i j))  (return-from tenta-colocar-peca nil))))
+    (return-from tenta-colocar-peca t)))
+
 ;;accoes: estado -> lista de accoes
-;;TODO
 (defun accoes (estado)
-  (let ((listaDeAccoes  ))))
+  (let* ((listaDeAccoes (make-list 1))
+        (peca (write-to-string (first (estado-pecas-por-colocar estado))))
+        (nrOrient 0)
+        (nomePeca (string "peca-"))
+        (nomePecaSym nil))
+    (setf nrOrient (gethash peca orientations))
+    (princ nrOrient)
+    (setf nomePeca (concatenate 'string nomePeca peca))
+    (loop for i from 0 to (1- nrOrient)
+          do(progn (setf nomePecaSym (eval (read-from-string (concatenate 'string nomePeca (write-to-string i)))))
+                   (loop for j from 0 to (- 10 (array-dimension nomePecaSym 1))
+                         do(when (tenta-colocar-peca nomePecaSym (estado-tabuleiro estado) j) (setf listaDeAccoes (append listaDeAccoes (cria-accao j nomePecaSym)))))))
+   (return-from accoes listaDeAccoes)))
 
 ;;resultado: estado x accao -> estado
-;;Comecamos a fazer esta funcao mas tivemos de parar
 (defun resultado(estado accao)
   (let ((estadoNovo (copia-estado estado))
         (linha (tabuleiro-altura-coluna (estado-tabuleiro estado) (accao-coluna accao)))
@@ -193,5 +221,5 @@
                   ((eql (nth i (estado-pecas-colocadas estado)) 'o) (setf pontuacaoMaxima (+ pontuacaoMaxima 300)))))
     (return-from custo-oportunidade (- pontuacaoMaxima (estado-pontos estado)))))
 
-;;(load "utils")
-(load "utils.fas")
+;;(load (compile-file "utils.lisp"))
+;;(load "utils.fas")
