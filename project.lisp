@@ -175,23 +175,43 @@
     (loop for i from 0 to (1- nrOrient)
           do(progn (setf nomePecaSym (eval (read-from-string (concatenate 'string nomePeca (write-to-string i)))))
                    (loop for j from 0 to (- 10 (array-dimension nomePecaSym 1))
-                         do(when (tenta-colocar-peca nomePecaSym (estado-tabuleiro estado) j) (setf listaDeAccoes (append listaDeAccoes (list (cria-accao j  nomePecaSym))))))))
+                         do(setf listaDeAccoes (append listaDeAccoes (list (cria-accao j  nomePecaSym)))))))
    (return-from accoes (rest listaDeAccoes))))
+
+;;altura-colocar-peca: array array coluna -> inteiro
+(defun altura-colocar-peca (peca tabuleiro coluna)
+  (let ((alturaMaxima 0))
+    (loop for i from 0 to (1- (array-dimension peca 1))
+          do(when (> (tabuleiro-altura-coluna tabuleiro (+ coluna i)) alturaMaxima) (setf alturaMaxima (tabuleiro-altura-coluna tabuleiro (+ coluna i)))))
+    (return-from altura-colocar-peca alturaMaxima)))
+
+;;descer: peca altura coluna tabuleiro -> logico
+(defun descer (peca altura coluna tabuleiro)
+  (loop for i from 0 to (1- (array-dimension peca 0))
+        do (loop for j from 0 to (1- (array-dimension peca 1))
+                 do(when (and (aref peca i j) (aref tabuleiro (1- (+ i altura)) (+ j coluna))) (return-from descer nil))))
+  (return-from descer t))
 
 ;;resultado: estado x accao -> estado
 (defun resultado(estado accao)
   (let ((estadoNovo (copia-estado estado))
-        (linha (tabuleiro-altura-coluna (estado-tabuleiro estado) (accao-coluna accao)))
+        (linha 0)
         (coluna (accao-coluna accao))
         (peca (accao-peca accao))
         (nrLinhasRem 0))
+    (setf linha (altura-colocar-peca peca (estado-tabuleiro estado) coluna))
     (setf (estado-pecas-colocadas estadoNovo)
           (append (list (first (estado-pecas-por-colocar estado))) (estado-pecas-colocadas estado)))
     (setf (estado-pecas-por-colocar estadoNovo)
           (rest (estado-pecas-por-colocar estado)))
+
+    (loop while (and (> linha 0) (descer peca linha coluna (estado-tabuleiro estado))) do
+          (setf linha (1- linha)))
+
     (loop for i from 0 to (1- (array-dimension peca 0))
           do (loop for j from 0 to (1- (array-dimension peca 1))
                    do(when (aref peca i j) (tabuleiro-preenche! (estado-tabuleiro estadoNovo) (+ i linha) (+ j coluna)))))
+
     (if (tabuleiro-topo-preenchido-p (estado-tabuleiro estadoNovo))
         (return-from resultado estadoNovo)
       (loop for i from 0 to 17
@@ -221,4 +241,4 @@
     (return-from custo-oportunidade (- pontuacaoMaxima (estado-pontos estado)))))
 
 ;;(load (compile-file "utils.lisp"))
-(load "utils.fas")
+;;(load "utils.fas")
