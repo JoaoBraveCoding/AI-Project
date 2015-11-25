@@ -170,6 +170,7 @@
         (nrOrient 0)
         (nomePeca (string "peca-"))
         (nomePecaSym nil))
+    (when (estado-final-p estado) (return-from accoes nil))
     (setf nrOrient (gethash peca orientations))
     (setf nomePeca (concatenate 'string nomePeca peca))
     (loop for i from 0 to (1- nrOrient)
@@ -239,6 +240,17 @@
                   ((eql (nth i (estado-pecas-colocadas estado)) 't) (setf pontuacaoMaxima (+ pontuacaoMaxima 300)))
                   ((eql (nth i (estado-pecas-colocadas estado)) 'o) (setf pontuacaoMaxima (+ pontuacaoMaxima 300)))))
     (return-from custo-oportunidade (- pontuacaoMaxima (estado-pontos estado)))))
+
+
+(defun remove-de-lista (lista inteiro)
+                 (let ((contador 0)
+                       (new-lista ()))
+                   (labels ((remove-de-lista-aux (lista-in)
+                                   (cond ((= contador inteiro) (setf new-lista (append new-lista (rest lista-in))))
+                                         (t (progn (setf new-lista (append new-lista (list (first lista-in)))) (setf contador (1+ contador)) (remove-de-lista-aux (rest lista-in)))))))
+                            (remove-de-lista-aux lista))
+                   (return-from remove-de-lista new-lista)))
+
 
 ;;(load (compile-file "utils.lisp"))
 ;;(load "utils.fas")
