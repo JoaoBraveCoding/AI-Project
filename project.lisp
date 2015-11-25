@@ -241,30 +241,59 @@
                   ((eql (nth i (estado-pecas-colocadas estado)) 'o) (setf pontuacaoMaxima (+ pontuacaoMaxima 300)))))
     (return-from custo-oportunidade (- pontuacaoMaxima (estado-pontos estado)))))
 
-
+;;remove-de-lista: lista x inteiro -> lista
 (defun remove-de-lista (lista inteiro)
-                 (let ((contador 0)
-                       (new-lista ()))
-                   (labels ((remove-de-lista-aux (lista-in)
-                                   (cond ((= contador inteiro) (setf new-lista (append new-lista (rest lista-in))))
-                                         (t (progn (setf new-lista (append new-lista (list (first lista-in)))) (setf contador (1+ contador)) (remove-de-lista-aux (rest lista-in)))))))
-                            (remove-de-lista-aux lista))
-                   (return-from remove-de-lista new-lista)))
+  (let ((contador 0)
+        (new-lista ()))
+    (labels ((remove-de-lista-aux (lista-in)
+                                  (cond ((= contador inteiro) (setf new-lista (append new-lista (rest lista-in))))
+                                        (t (progn (setf new-lista (append new-lista (list (first lista-in)))) (setf contador (1+ contador)) (remove-de-lista-aux (rest lista-in)))))))
+      (remove-de-lista-aux lista))
+    (return-from remove-de-lista new-lista)))
+
+;;avaliacao_f: estado x heuristica x custo-caminho -> inteiro
 
 
-;;melhor-estado: lista_de_estados x avaliacao_f -> inteiro
-(defun melhor-estado (lista-de-estados avaliacao_f)
-  (let ((melhor-f (funcall avaliacao_f (nth 0 lista_de_estados))) (indice-melhor-estado 0))
-  (loop for i from 1 to (- 1 (list-length lista-de-estados))
-    do(when (<= (funcall avaliacao_f (nth i lista-de-estados))(melhor-f))(progn (setf melhor-f (funcall avaliacao-f (nth i lista-de-estados)))(setf indice-melhor-estado i))
-  ))
-  (return-from melhor-estado indice-melhor-estado)))
+
+;;melhor-estado: lista_de_estados x heuristica x custo-caminho -> inteiro
+(defun melhor-estado (lista-de-estados heuristica custo-caminho)
+  (let ((melhor-f (avaliacao_f (nth 0 lista-de-estados) heuristica custo-caminho))
+        (indice-melhor-estado 0))
+    (loop for i from 1 to (1- (list-length lista-de-estados))
+          do(when (<= (avaliacao_f (nth i lista-de-estados) heuristica custo-caminho) melhor-f)
+              (progn (setf melhor-f (avaliacao_f (nth i lista-de-estados) heuristica custo-caminho))
+                     (setf indice-melhor-estado i))))
+    (return-from melhor-estado indice-melhor-estado)))
 
 ;;estado-em-lista: lista-de-estados x estado -> logico
 (defun estado-em-lista (lista-de-estados estado)
   (loop for i from 0 to (list-length lista-de-estados)
-    do(when ((estados-iguais-p estado (nth i lista-de-estados)))(return t)))
-  return nil)
+        do(when (estados-iguais-p estado (nth i lista-de-estados)) (return-from estado-em-lista t)))
+  (return-from estado-em-lista nil))
+
+;;gera-estados: estado x accoes x resultado
+
+;;procura-A*: problema x heuristica -> lista
+(defun procura-A* (problema heuristica)
+  (let ((accoes            (problema-accoes problema))
+        (resultado         (problema-resultado problema))
+        (solucao           (problema-solucao problema))
+        (custo-caminho     (problema-custo-caminho problema))
+        (estados-avaliados ())
+        (estados-por-avaliar (make-list 1 :initial-element (list (problema-estado-inicial problema) ())))
+        (indice-melhor-estado 0)
+        (estado 0)
+        (lista-de-accoes ()))
+    (loop while (not (eql estados-por-avaliar nil))
+          do(progn
+              (setf indice-melhor-estado (melhor-estado estados-por-avaliar heuristica custo-caminho))
+              (setf estado (nth indice-melhor-estado estados-por-avaliar))
+              (setf estados-por-avaliar (remove-de-lista estados-por-avaliar indice-melhor-estado))
+              (when (funcall solucao estado) (return-from procura-A* listaDeAccoes)) 
+              (setf estados-por-avaliar (append estados-por-avaliar (gera-estados estado accoes resultado)))
+              )
+    )
+  )
 
 
 ;;(load (compile-file "utils.lisp"))
