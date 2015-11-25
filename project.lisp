@@ -9,7 +9,7 @@
 
 ;;cria-accao: inteiro x array -> accao
 (defun cria-accao (inteiro array)
- (cons inteiro array)) 
+ (cons inteiro array))
 
 ;;accao-coluna: accao -> inteiro
 (defun accao-coluna (accao)
@@ -250,6 +250,21 @@
                                          (t (progn (setf new-lista (append new-lista (list (first lista-in)))) (setf contador (1+ contador)) (remove-de-lista-aux (rest lista-in)))))))
                             (remove-de-lista-aux lista))
                    (return-from remove-de-lista new-lista)))
+
+
+;;melhor-estado: lista_de_estados x avaliacao_f -> inteiro
+(defun melhor-estado (lista-de-estados avaliacao_f)
+  (let ((melhor-f (funcall avaliacao_f (nth 0 lista_de_estados))) (indice-melhor-estado 0))
+  (loop for i from 1 to (- 1 (list-length lista-de-estados))
+    do(when (<= (funcall avaliacao_f (nth i lista-de-estados))(melhor-f))(progn (setf melhor-f (funcall avaliacao-f (nth i lista-de-estados)))(setf indice-melhor-estado i))
+  ))
+  (return-from melhor-estado indice-melhor-estado)))
+
+;;estado-em-lista: lista-de-estados x estado -> logico
+(defun estado-em-lista (lista-de-estados estado)
+  (loop for i from 0 to (list-length lista-de-estados)
+    do(when ((estados-iguais-p estado (nth i lista-de-estados)))(return t)))
+  return nil)
 
 
 ;;(load (compile-file "utils.lisp"))
