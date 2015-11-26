@@ -177,7 +177,7 @@
           do(progn (setf nomePecaSym (eval (read-from-string (concatenate 'string nomePeca (write-to-string i)))))
                    (loop for j from 0 to (- 10 (array-dimension nomePecaSym 1))
                          do(setf listaDeAccoes (append listaDeAccoes (list (cria-accao j  nomePecaSym)))))))
-   (return-from accoes (rest listaDeAccoes))))
+    (return-from accoes (rest listaDeAccoes))))
 
 ;;altura-colocar-peca: array array coluna -> inteiro
 (defun altura-colocar-peca (peca tabuleiro coluna)
@@ -190,7 +190,7 @@
 (defun descer (peca altura coluna tabuleiro)
   (loop for i from 0 to (1- (array-dimension peca 0))
         do (loop for j from 0 to (1- (array-dimension peca 1))
-                 do(when (and (aref peca i j) (aref tabuleiro (1- (+ i altura)) (+ j coluna))) (return-from descer nil))))
+                 do(when  (>= 17 (+ i altura)) (when (and (aref peca i j) (aref tabuleiro (1- (+ i altura)) (+ j coluna))) (return-from descer nil)) )))
   (return-from descer t))
 
 ;;resultado: estado x accao -> estado
@@ -205,14 +205,12 @@
           (append (list (first (estado-pecas-por-colocar estado))) (estado-pecas-colocadas estado)))
     (setf (estado-pecas-por-colocar estadoNovo)
           (rest (estado-pecas-por-colocar estado)))
-
     (loop while (and (> linha 0) (descer peca linha coluna (estado-tabuleiro estado))) do
-          (setf linha (1- linha)))
+          (setf linha (- linha 1)))
 
     (loop for i from 0 to (1- (array-dimension peca 0))
           do (loop for j from 0 to (1- (array-dimension peca 1))
                    do(when (aref peca i j) (tabuleiro-preenche! (estado-tabuleiro estadoNovo) (+ i linha) (+ j coluna)))))
-
     (if (tabuleiro-topo-preenchido-p (estado-tabuleiro estadoNovo))
         (return-from resultado estadoNovo)
       (loop for i from 0 to 17
@@ -247,21 +245,23 @@
         (new-lista ()))
     (labels ((remove-de-lista-aux (lista-in)
                                   (cond ((= contador inteiro) (setf new-lista (append new-lista (rest lista-in))))
-                                        (t (progn (setf new-lista (append new-lista (list (first lista-in)))) (setf contador (1+ contador)) (remove-de-lista-aux (rest lista-in)))))))
+                                        (t (progn (setf new-lista (append new-lista (list (first lista-in))))
+                                                  (setf contador (1+ contador)) (remove-de-lista-aux (rest lista-in)))))))
       (remove-de-lista-aux lista))
     (return-from remove-de-lista new-lista)))
 
 ;;avaliacao_f: estado x heuristica x custo-caminho -> inteiro
-
+(defun avaliacao_f (estado heuristica custo-caminho)
+  (+ (funcall heuristica estado) (funcall custo-caminho estado)))
 
 
 ;;melhor-estado: lista_de_estados x heuristica x custo-caminho -> inteiro
 (defun melhor-estado (lista-de-estados heuristica custo-caminho)
-  (let ((melhor-f (avaliacao_f (nth 0 lista-de-estados) heuristica custo-caminho))
+  (let ((melhor-f (avaliacao_f (nth 0 (nth 0 lista-de-estados)) heuristica custo-caminho))
         (indice-melhor-estado 0))
     (loop for i from 1 to (1- (list-length lista-de-estados))
-          do(when (<= (avaliacao_f (nth i lista-de-estados) heuristica custo-caminho) melhor-f)
-              (progn (setf melhor-f (avaliacao_f (nth i lista-de-estados) heuristica custo-caminho))
+          do(when (<= (avaliacao_f (nth 0 (nth i lista-de-estados)) heuristica custo-caminho) melhor-f)
+              (progn (setf melhor-f (avaliacao_f (nth 0 (nth i lista-de-estados)) heuristica custo-caminho))
                      (setf indice-melhor-estado i))))
     (return-from melhor-estado indice-melhor-estado)))
 
@@ -271,30 +271,33 @@
         do(when (estados-iguais-p estado (nth i lista-de-estados)) (return-from estado-em-lista t)))
   (return-from estado-em-lista nil))
 
-;;gera-estados: estado x accoes x resultado
+;;gera-estados: estado x accoes x resultado -> lista
+(defun gera-estados (par-estado-accoes accoes resultado)
+  (let ((lista-de-estados ())
+        (lista-de-accoes (funcall accoes (nth 0 par-estado-accoes))))
+    (loop for i from 0 to (1- (list-length lista-de-accoes))
+          do (setf lista-de-estados (append lista-de-estados (make-list 1 :initial-element (list (funcall resultado (nth 0 par-estado-accoes) (nth i lista-de-accoes)) (append (nth 1 par-estado-accoes) (list (nth i lista-de-accoes))))))))
+    (return-from gera-estados lista-de-estados)))
 
 ;;procura-A*: problema x heuristica -> lista
 (defun procura-A* (problema heuristica)
-  (let ((accoes            (problema-accoes problema))
-        (resultado         (problema-resultado problema))
-        (solucao           (problema-solucao problema))
-        (custo-caminho     (problema-custo-caminho problema))
-        (estados-avaliados ())
-        (estados-por-avaliar (make-list 1 :initial-element (list (problema-estado-inicial problema) ())))
+  (let ((accoes               (problema-accoes problema))
+        (resultado            (problema-resultado problema))
+        (solucao              (problema-solucao problema))
+        (custo-caminho        (problema-custo-caminho problema))
+        (estados-por-avaliar  (make-list 1 :initial-element (list (problema-estado-inicial problema) ())))
         (indice-melhor-estado 0)
-        (estado 0)
-        (lista-de-accoes ()))
+        (par-estado-accao     0))
     (loop while (not (eql estados-por-avaliar nil))
           do(progn
               (setf indice-melhor-estado (melhor-estado estados-por-avaliar heuristica custo-caminho))
-              (setf estado (nth indice-melhor-estado estados-por-avaliar))
-              (setf estados-por-avaliar (remove-de-lista estados-por-avaliar indice-melhor-estado))
-              (when (funcall solucao estado) (return-from procura-A* listaDeAccoes)) 
-              (setf estados-por-avaliar (append estados-por-avaliar (gera-estados estado accoes resultado)))
-              )
-    )
-  )
+              (setf par-estado-accao     (nth indice-melhor-estado estados-por-avaliar))
+              (setf estados-por-avaliar  (remove-de-lista estados-por-avaliar indice-melhor-estado))
+              (when (funcall solucao (nth 0 par-estado-accao)) (return-from procura-A* (nth 1 par-estado-accao)))
+              (setf estados-por-avaliar (append estados-por-avaliar (gera-estados par-estado-accao accoes resultado)))))
+    (return-from procura-A* nil)))
+
 
 
 ;;(load (compile-file "utils.lisp"))
-;;(load "utils.fas")
+(load "utils.fas")
