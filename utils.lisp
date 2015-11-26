@@ -138,9 +138,9 @@
 		(format T "~A " (if (tabuleiro-preenchido-p tabuleiro linha coluna) "#" " ")))
 	(format T "|"))			
 
-
+			
 ;;exemplo muito simples de um tabuleiro com a primeira e segunda linha quase todas preenchidas
-#|(defvar t1 (cria-tabuleiro))
+(defvar t1 (cria-tabuleiro))
 (dotimes (coluna 9)
 	(tabuleiro-preenche! t1 0 coluna))
 (dotimes (coluna 9)
@@ -152,4 +152,4 @@
 				   :solucao #'solucao
 				   :accoes #'accoes
 				   :resultado #'resultado
-				   :custo-caminho #'custo-oportunidade))|#
+				   :custo-caminho #'custo-oportunidade))
