@@ -261,6 +261,7 @@
           do(when (<= (avaliacao_f (nth 0 (nth i lista-de-estados)) heuristica custo-caminho) melhor-f)
               (progn (setf melhor-f (avaliacao_f (nth 0 (nth i lista-de-estados)) heuristica custo-caminho))
                      (setf indice-melhor-estado i))))
+    (princ (avaliacao_f (nth 0 (nth indice-melhor-estado lista-de-estados)) heuristica custo-caminho))
     (return-from melhor-estado indice-melhor-estado)))
 
 ;;estado-em-lista: lista-de-estados x estado -> logico
@@ -296,8 +297,17 @@
     (return-from procura-A* nil)))
 
 ;;heuristica-de-pesos: estado -> inteiro
-#|(defun heuristica-de-pesos (estado-a-testar)
-  (let ((tabuleiro-resultante (copia-tabuleiro estado-tabuleiro estado-a-testar)) (a  -0.51006) (b 0.760666) (c -0.35663) (d -0.184483) (peso-agregado 0) (linhas-completas 0) (relevo 0) (buraco 0) (aux-buraco-bool 0))
+(defun heuristica-de-pesos (estado-a-testar)
+  (let ((tabuleiro-resultante (copia-tabuleiro (estado-tabuleiro estado-a-testar)))
+        (a  -0.51006)
+        (b   0.060666)
+        (c  -0.55663)
+        (d  -0.584483)
+        (peso-agregado 0)
+        (linhas-completas 0)
+        (relevo 0)
+        (buraco 0)
+        (aux-buraco-bool 0))
     ;;peso-agregado/relevo/buracos
     (loop for i from 0 to 9 do
           (progn(+ peso-agregado (tabuleiro-altura-coluna tabuleiro-resultante i))
@@ -305,11 +315,11 @@
           ;;contar buracos
           (loop for j from 0 to (tabuleiro-altura-coluna tabuleiro-resultante i) do
             (progn (when (and (= aux-buraco-bool 0)(not (tabuleiro-preenchido-p tabuleiro-resultante (- (tabuleiro-altura-coluna tabuleiro-resultante i) j) i))) (+ 1 buraco))
-            (when (and (= aux-buraco-bool 1) (tabuleiro-preenchido-p tabuleiro-resultante))(setf aux-buraco-bool 0))))))
+            (when (and (= aux-buraco-bool 1) (tabuleiro-preenchido-p tabuleiro-resultante (- (tabuleiro-altura-coluna tabuleiro-resultante i) j) i))(setf aux-buraco-bool 0))))))
     ;;linhas-completas
-    (loop for i from 17 do
+    (loop for i from 0 to 17 do
       (when (tabuleiro-linha-completa-p (estado-tabuleiro estado-a-testar) i) (+ 1 linhas-completas)))
-    return-from heuristica-de-pesos (+ (* a peso-agregado) (* b linhas-completas) (* c buracos) (* d relevo))))
+    (return-from heuristica-de-pesos (+ (* a peso-agregado) (* b linhas-completas) (* c buraco) (* d relevo)))))
 
 ;;procura-best: array x lista pecas -> lista accoes
 #|(defun procura-best (array-tabuleiro pecas-por-colocar)
