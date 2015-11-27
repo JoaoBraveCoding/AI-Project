@@ -261,7 +261,6 @@
           do(when (<= (avaliacao_f (nth 0 (nth i lista-de-estados)) heuristica custo-caminho) melhor-f)
               (progn (setf melhor-f (avaliacao_f (nth 0 (nth i lista-de-estados)) heuristica custo-caminho))
                      (setf indice-melhor-estado i))))
-    (princ (avaliacao_f (nth 0 (nth indice-melhor-estado lista-de-estados)) heuristica custo-caminho))
     (return-from melhor-estado indice-melhor-estado)))
 
 ;;estado-em-lista: lista-de-estados x estado -> logico
@@ -299,10 +298,10 @@
 ;;heuristica-de-pesos: estado -> inteiro
 (defun heuristica-de-pesos (estado-a-testar)
   (let ((tabuleiro-resultante (copia-tabuleiro (estado-tabuleiro estado-a-testar)))
-        (a  -0.51006)
-        (b   0.060666)
-        (c  -0.55663)
-        (d  -0.584483)
+        (a   0.51006)
+        (b  -0.060666)
+        (c   0.55663)
+        (d   0.584483)
         (peso-agregado 0)
         (linhas-completas 0)
         (relevo 0)
@@ -310,21 +309,18 @@
         (aux-buraco-bool 0))
     ;;peso-agregado/relevo/buracos
     (loop for i from 0 to 9 do
-          (progn(+ peso-agregado (tabuleiro-altura-coluna tabuleiro-resultante i))
-          (when (/= i 9)(+ relevo (abs (- (tabuleiro-altura-coluna tabuleiro-resultante i) (tabuleiro-altura-coluna tabuleiro-resultante (+ 1 i))))))
+          (progn(setf peso-agregado (+ peso-agregado (tabuleiro-altura-coluna tabuleiro-resultante i)))
+          (when (/= i 9)(setf relevo (+ relevo (abs (- (tabuleiro-altura-coluna tabuleiro-resultante i) (tabuleiro-altura-coluna tabuleiro-resultante (+ 1 i)))))))
           ;;contar buracos
           (loop for j from 0 to (tabuleiro-altura-coluna tabuleiro-resultante i) do
-            (progn (when (and (= aux-buraco-bool 0)(not (tabuleiro-preenchido-p tabuleiro-resultante (- (tabuleiro-altura-coluna tabuleiro-resultante i) j) i))) (+ 1 buraco))
+            (progn (when (and (= aux-buraco-bool 0)(not (tabuleiro-preenchido-p tabuleiro-resultante (- (tabuleiro-altura-coluna tabuleiro-resultante i) j) i))) (incf buraco))
             (when (and (= aux-buraco-bool 1) (tabuleiro-preenchido-p tabuleiro-resultante (- (tabuleiro-altura-coluna tabuleiro-resultante i) j) i))(setf aux-buraco-bool 0))))))
     ;;linhas-completas
     (loop for i from 0 to 17 do
-      (when (tabuleiro-linha-completa-p (estado-tabuleiro estado-a-testar) i) (+ 1 linhas-completas)))
+          (when (tabuleiro-linha-completa-p tabuleiro-resultante i) (incf linhas-completas)))
     (return-from heuristica-de-pesos (+ (* a peso-agregado) (* b linhas-completas) (* c buraco) (* d relevo)))))
 
-;;procura-best: array x lista pecas -> lista accoes
-#|(defun procura-best (array-tabuleiro pecas-por-colocar)
-  (let problema-novo (make-problema :estado inicial (make-estado :pontos 0))
-  ))|#
+
 
 ;;(load (compile-file "utils.lisp"))
 ;;(load "utils.fas")
