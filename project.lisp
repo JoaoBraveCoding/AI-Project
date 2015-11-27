@@ -301,23 +301,22 @@
 (defun heuristica-de-pesos (estado-a-testar)
   (let ((tabuleiro-resultante (copia-tabuleiro estado-tabuleiro estado-a-testar)) (a  -0.51006) (b 0.760666) (c -0.35663) (d -0.184483) (peso-agregado 0) (linhas-completas 0) (relevo 0) (buraco 0) (aux-buraco-bool 0))
     ;;peso-agregado/relevo/buracos
-    (loop for i from 0 to 9
-      do((progn(+ peso-agregado (tabuleiro-altura-coluna tabuleiro-resultante i))
-          when (/= i 9)(+ relevo (abs (- (tabuleiro-altura-coluna tabuleiro-resultante i) (tabuleiro-altura-coluna tabuleiro-resultante (+ 1 i)))))
+    (loop for i from 0 to 9 do
+          (progn(+ peso-agregado (tabuleiro-altura-coluna tabuleiro-resultante i))
+          (when (/= i 9)(+ relevo (abs (- (tabuleiro-altura-coluna tabuleiro-resultante i) (tabuleiro-altura-coluna tabuleiro-resultante (+ 1 i))))))
           ;;contar buracos
-          (loop for j from 0 to (tabuleiro-altura-coluna tabuleiro-resultante i)
-            do((progn (when (and (= aux-buraco-bool 0)(not (tabuleiro-preenchido-p tabuleiro-resultante (- (tabuleiro-altura-coluna tabuleiro-resultante i) j) i)))(+ 1 buraco))
-            when (and (= aux-buraco-bool 1) (tabuleiro-preenchido-p tabuleiro-resultante))(setf aux-buraco-bool 0))))))
+          (loop for j from 0 to (tabuleiro-altura-coluna tabuleiro-resultante i) do
+            (progn (when (and (= aux-buraco-bool 0)(not (tabuleiro-preenchido-p tabuleiro-resultante (- (tabuleiro-altura-coluna tabuleiro-resultante i) j) i))) (+ 1 buraco))
+            (when (and (= aux-buraco-bool 1) (tabuleiro-preenchido-p tabuleiro-resultante))(setf aux-buraco-bool 0))))))
     ;;linhas-completas
-    (loop for i from 17
-      do(when (tabuleiro-linha-completa-p (estado-tabuleiro estado-a-testar) i)(+ 1 linhas-completas))
-    )
+    (loop for i from 17 do
+      (when (tabuleiro-linha-completa-p (estado-tabuleiro estado-a-testar) i) (+ 1 linhas-completas)))
     return-from heuristica-de-pesos (+ (* a peso-agregado) (* b linhas-completas) (* c buracos) (* d relevo))))
 
 ;;procura-best: array x lista pecas -> lista accoes
-(defun procura-best (array-tabuleiro pecas-por-colocar)
+#|(defun procura-best (array-tabuleiro pecas-por-colocar)
   (let problema-novo (make-problema :estado inicial (make-estado :pontos 0))
-  ))
+  ))|#
 
 ;;(load (compile-file "utils.lisp"))
-(load "utils.fas")
+;;(load "utils.fas")
