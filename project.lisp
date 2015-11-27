@@ -40,11 +40,9 @@
 ;;tabuleiro-altura-coluna: tabuleiro x inteiro -> inteiro
 (defun tabuleiro-altura-coluna (tabuleiro inteiro)
   (loop for i from 0 to 17
-        do(cond ((eql (aref tabuleiro (- 17 i) inteiro) t) (return-from tabuleiro-altura-coluna (- 18 i)))
-          )
-        )
-  (return-from tabuleiro-altura-coluna 0)
-  )
+        do(when (tabuleiro-preenchido-p tabuleiro (- 17 i) inteiro)
+            (return-from tabuleiro-altura-coluna (- 18 i))))
+  (return-from tabuleiro-altura-coluna 0))
 
 ;;tabuleiro-linha-completa-p: tabuleiro x inteiro -> logico
 (defun tabuleiro-linha-completa-p (tabuleiro inteiro)
@@ -190,7 +188,7 @@
 (defun descer (peca altura coluna tabuleiro)
   (loop for i from 0 to (1- (array-dimension peca 0))
         do (loop for j from 0 to (1- (array-dimension peca 1))
-                 do(when  (>= 17 (+ i altura)) (when (and (aref peca i j) (aref tabuleiro (1- (+ i altura)) (+ j coluna))) (return-from descer nil)) )))
+                 do(when  (>= 17 (+ i altura)) (when (and (aref peca i j) (tabuleiro-preenchido-p tabuleiro (1- (+ i altura)) (+ j coluna))) (return-from descer nil)) )))
   (return-from descer t))
 
 ;;resultado: estado x accao -> estado
@@ -298,7 +296,7 @@
     (return-from procura-A* nil)))
 
 ;;heuristica-de-pesos: estado -> inteiro
-(defun heuristica-de-pesos (estado-a-testar)
+#|(defun heuristica-de-pesos (estado-a-testar)
   (let ((tabuleiro-resultante (copia-tabuleiro estado-tabuleiro estado-a-testar)) (a  -0.51006) (b 0.760666) (c -0.35663) (d -0.184483) (peso-agregado 0) (linhas-completas 0) (relevo 0) (buraco 0) (aux-buraco-bool 0))
     ;;peso-agregado/relevo/buracos
     (loop for i from 0 to 9
@@ -317,7 +315,7 @@
 ;;procura-best: array x lista pecas -> lista accoes
 (defun procura-best (array-tabuleiro pecas-por-colocar)
   (let problema-novo (make-problema :estado inicial (make-estado :pontos 0))
-  ))
+  ))|#
 
 ;;(load (compile-file "utils.lisp"))
 (load "utils.fas")
