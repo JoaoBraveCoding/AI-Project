@@ -237,6 +237,19 @@
                   ((eql (nth i (estado-pecas-colocadas estado)) 'o) (setf pontuacaoMaxima (+ pontuacaoMaxima 300)))))
     (return-from custo-oportunidade (- pontuacaoMaxima (estado-pontos estado)))))
 
+;;custo-oportunidade: estado -> inteiro
+(defun custo-ainda-a-perder (estado)
+  (let ((pontuacaoMaxima 0))
+    (loop for i from 0 to (length (estado-pecas-por-colocar estado))
+          do(cond ((eql (nth i (estado-pecas-por-colocar estado)) 'i) (setf pontuacaoMaxima (+ pontuacaoMaxima 800)))
+                  ((eql (nth i (estado-pecas-por-colocar estado)) 'j) (setf pontuacaoMaxima (+ pontuacaoMaxima 500)))
+                  ((eql (nth i (estado-pecas-por-colocar estado)) 'l) (setf pontuacaoMaxima (+ pontuacaoMaxima 500)))
+                  ((eql (nth i (estado-pecas-por-colocar estado)) 's) (setf pontuacaoMaxima (+ pontuacaoMaxima 300)))
+                  ((eql (nth i (estado-pecas-por-colocar estado)) 'z) (setf pontuacaoMaxima (+ pontuacaoMaxima 300)))
+                  ((eql (nth i (estado-pecas-por-colocar estado)) 't) (setf pontuacaoMaxima (+ pontuacaoMaxima 300)))
+                  ((eql (nth i (estado-pecas-por-colocar estado)) 'o) (setf pontuacaoMaxima (+ pontuacaoMaxima 300)))))
+    (return-from custo-ainda-a-perder pontuacaoMaxima)))
+
 ;;remove-de-lista: lista x inteiro -> lista
 (defun remove-de-lista (lista inteiro)
   (let ((contador 0)
@@ -261,6 +274,10 @@
           do(when (<= (avaliacao_f (nth 0 (nth i lista-de-estados)) heuristica custo-caminho) melhor-f)
               (progn (setf melhor-f (avaliacao_f (nth 0 (nth i lista-de-estados)) heuristica custo-caminho))
                      (setf indice-melhor-estado i))))
+    ;;(princ (avaliacao_f (nth 0 (nth indice-melhor-estado lista-de-estados)) heuristica custo-caminho))
+    ;;(format t "~C"#\linefeed)
+    ;;(when (< 30 (list-length lista-de-estados)) (princ (avaliacao_f (nth 0 (nth (+ indice-melhor-estado 8) lista-de-estados)) heuristica custo-caminho)))
+    ;;(format t "~C"#\linefeed)
     (return-from melhor-estado indice-melhor-estado)))
 
 ;;estado-em-lista: lista-de-estados x estado -> logico
@@ -298,29 +315,46 @@
 ;;heuristica-de-pesos: estado -> inteiro
 (defun heuristica-de-pesos (estado-a-testar)
   (let ((tabuleiro-resultante (copia-tabuleiro (estado-tabuleiro estado-a-testar)))
-        (a   0.51006)
-        (b  -0.060666)
-        (c   0.55663)
-        (d   0.584483)
+        (a   0.510066)
+        ;;(b   -0.760666)
+        (c   0.35663)
+        (d   0.184483)
         (peso-agregado 0)
-        (linhas-completas 0)
+        ;;(linhas-completas 0)
         (relevo 0)
         (buraco 0)
-        (aux-buraco-bool 0))
+        (aux-buraco-bool 0)
+        (pos-preenchida nil))
     ;;peso-agregado/relevo/buracos
     (loop for i from 0 to 9 do
-          (progn(setf peso-agregado (+ peso-agregado (tabuleiro-altura-coluna tabuleiro-resultante i)))
-          (when (/= i 9)(setf relevo (+ relevo (abs (- (tabuleiro-altura-coluna tabuleiro-resultante i) (tabuleiro-altura-coluna tabuleiro-resultante (+ 1 i)))))))
-          ;;contar buracos
-          (loop for j from 0 to (tabuleiro-altura-coluna tabuleiro-resultante i) do
-            (progn (when (and (= aux-buraco-bool 0)(not (tabuleiro-preenchido-p tabuleiro-resultante (- (tabuleiro-altura-coluna tabuleiro-resultante i) j) i))) (incf buraco))
-            (when (and (= aux-buraco-bool 1) (tabuleiro-preenchido-p tabuleiro-resultante (- (tabuleiro-altura-coluna tabuleiro-resultante i) j) i))(setf aux-buraco-bool 0))))))
+          (progn (setf peso-agregado (+ peso-agregado (tabuleiro-altura-coluna tabuleiro-resultante i)))
+                 (when (/= i 9) (setf relevo (+ relevo (abs (- (tabuleiro-altura-coluna tabuleiro-resultante i) (tabuleiro-altura-coluna tabuleiro-resultante (+ 1 i)))))))
+                 
+                 ;;contar buracos
+                 (loop for j from 0 to (1- (tabuleiro-altura-coluna tabuleiro-resultante i)) do
+                       (progn (setf pos-preenchida (tabuleiro-preenchido-p tabuleiro-resultante (- (1- (tabuleiro-altura-coluna tabuleiro-resultante i)) j) i)) 
+                              (cond ((and (= aux-buraco-bool 0) (not pos-preenchida)) (progn (incf buraco) (setf aux-buraco-bool 1))) 
+                                    ((and (= aux-buraco-bool 1) pos-preenchida) (setf aux-buraco-bool 0)))))))
     ;;linhas-completas
-    (loop for i from 0 to 17 do
-          (when (tabuleiro-linha-completa-p tabuleiro-resultante i) (incf linhas-completas)))
-    (return-from heuristica-de-pesos (+ (* a peso-agregado) (* b linhas-completas) (* c buraco) (* d relevo)))))
+    ;;(loop for i from 0 to 17 do
+    ;;    (when (tabuleiro-linha-completa-p tabuleiro-resultante i) (incf linhas-completas)))
+    (return-from heuristica-de-pesos (+ (* a peso-agregado) (* c buraco) (* d relevo)))))
 
+;;heuristica-best: estado -> inteiro
+(defun heuristica-best (estado)
+  (let ((a 0.1)
+        (b 0.7))
+    (+ (* (heuristica-de-pesos estado) a) (* (qualidade estado) b))))
 
+;;procura-best: array x lista -> lista
+(defun procura-best (array-tabuleiro pecas-por-colocar)
+  (let ((problema-novo (make-problema :estado-inicial (make-estado :pontos 0 :pecas-por-colocar pecas-por-colocar :pecas-colocadas () :tabuleiro (array->tabuleiro array-tabuleiro))
+                                      :solucao #'solucao
+                                      :accoes  #'accoes
+                                      :resultado #'resultado
+                                      :custo-caminho #'custo-oportunidade)))
+    (procura-A* problema-novo #'(lambda (x) (estado-pontos x) (- 0 1)))))
 
 ;;(load (compile-file "utils.lisp"))
-;;(load "utils.fas")
+(load "utils.fas")
+;;#'(lambda (x) (estado-pontos x) (+ 0 0))
