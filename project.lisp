@@ -269,17 +269,13 @@
 
 
 ;;melhor-estado: lista_de_estados x heuristica x custo-caminho -> inteiro
-(defun melhor-estado (lista-de-estados heuristica custo-caminho)
-  (let ((melhor-f (avaliacao_f (nth 0 (nth 0 lista-de-estados)) heuristica custo-caminho))
+(defun melhor-estado (lista-de-estados)
+  (let ((melhor-f (nth 2 (nth 0 lista-de-estados)))
         (indice-melhor-estado 0))
     (loop for i from 1 to (1- (list-length lista-de-estados))
-          do(when (<= (avaliacao_f (nth 0 (nth i lista-de-estados)) heuristica custo-caminho) melhor-f)
-              (progn (setf melhor-f (avaliacao_f (nth 0 (nth i lista-de-estados)) heuristica custo-caminho))
+          do(when (<= (nth 2 (nth i lista-de-estados)) melhor-f)
+              (progn (setf melhor-f (nth 2 (nth i lista-de-estados)))
                      (setf indice-melhor-estado i))))
-    ;;(princ (avaliacao_f (nth 0 (nth indice-melhor-estado lista-de-estados)) heuristica custo-caminho))
-    ;;(format t "~C"#\linefeed)
-    ;;(when (< 30 (list-length lista-de-estados)) (princ (avaliacao_f (nth 0 (nth (+ indice-melhor-estado 8) lista-de-estados)) heuristica custo-caminho)))
-    ;;(format t "~C"#\linefeed)
     (return-from melhor-estado indice-melhor-estado)))
 
 ;;estado-em-lista: lista-de-estados x estado -> logico
@@ -289,29 +285,33 @@
   (return-from estado-em-lista nil))
 
 ;;gera-estados: estado x accoes x resultado -> lista
-(defun gera-estados (par-estado-accoes accoes resultado)
+(defun gera-estados (par-estado-accoes accoes resultado heuristica custo-caminho)
   (let ((lista-de-estados ())
-        (lista-de-accoes (funcall accoes (nth 0 par-estado-accoes))))
+        (lista-de-accoes (funcall accoes (nth 0 par-estado-accoes)))
+        (estado-novo 0))
     (loop for i from 0 to (1- (list-length lista-de-accoes))
-          do (setf lista-de-estados (append lista-de-estados (make-list 1 :initial-element (list (funcall resultado (nth 0 par-estado-accoes) (nth i lista-de-accoes)) (append (nth 1 par-estado-accoes) (list (nth i lista-de-accoes))))))))
+          do (progn (setf estado-novo (funcall resultado (nth 0 par-estado-accoes) (nth i lista-de-accoes)))
+                    (setf lista-de-estados (append lista-de-estados (make-list 1 :initial-element (list estado-novo 
+                                                                                                        (append (nth 1 par-estado-accoes) (list (nth i lista-de-accoes)))
+                                                                                                        (avaliacao_f estado-novo heuristica custo-caminho)))))))
     (return-from gera-estados lista-de-estados)))
 
 ;;procura-A*: problema x heuristica -> lista
 (defun procura-A* (problema heuristica)
-  (let ((accoes               (problema-accoes problema))
+  (let* ((accoes               (problema-accoes problema))
         (resultado            (problema-resultado problema))
         (solucao              (problema-solucao problema))
         (custo-caminho        (problema-custo-caminho problema))
-        (estados-por-avaliar  (make-list 1 :initial-element (list (problema-estado-inicial problema) ())))
+        (estados-por-avaliar  (make-list 1 :initial-element (list (problema-estado-inicial problema) () (avaliacao_f (problema-estado-inicial problema) heuristica custo-caminho))))
         (indice-melhor-estado 0)
         (par-estado-accao     0))
     (loop while (not (eql estados-por-avaliar nil))
           do(progn
-              (setf indice-melhor-estado (melhor-estado estados-por-avaliar heuristica custo-caminho))
+              (setf indice-melhor-estado (melhor-estado estados-por-avaliar))
               (setf par-estado-accao     (nth indice-melhor-estado estados-por-avaliar))
               (setf estados-por-avaliar  (remove-de-lista estados-por-avaliar indice-melhor-estado))
               (when (funcall solucao (nth 0 par-estado-accao)) (return-from procura-A* (nth 1 par-estado-accao)))
-              (setf estados-por-avaliar (append estados-por-avaliar (gera-estados par-estado-accao accoes resultado)))))
+              (setf estados-por-avaliar (append estados-por-avaliar (gera-estados par-estado-accao accoes resultado heuristica custo-caminho)))))
     (return-from procura-A* nil)))
 
 ;;heuristica-de-pesos: estado -> inteiro
@@ -319,8 +319,8 @@
   (let ((tabuleiro-resultante (copia-tabuleiro (estado-tabuleiro estado-a-testar)))
         ;;(a   0.510066)
         ;;(b   -0.760666)
-        (c   175)
-        (d   65)
+        (c   100) ;;175
+        (d   60)  ;;60
         ;;(peso-agregado 0)
         ;;(linhas-completas 0)
         (relevo 0)
@@ -409,5 +409,5 @@
     (procura-A* problema-novo #'heuristica-de-pesos)))
 
 ;;(load (compile-file "utils.lisp"))
-;(load "utils.fas")
+(load "utils.fas")
 ;;#'(lambda (x) (estado-pontos x) (+ 0 0))
