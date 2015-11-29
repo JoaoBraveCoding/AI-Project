@@ -237,19 +237,6 @@
                   ((eql (nth i (estado-pecas-colocadas estado)) 'o) (setf pontuacaoMaxima (+ pontuacaoMaxima 300)))))
     (return-from custo-oportunidade (- pontuacaoMaxima (estado-pontos estado)))))
 
-;;custo-oportunidade: estado -> inteiro
-(defun custo-ainda-a-perder (estado)
-  (let ((pontuacaoMaxima 0))
-    (loop for i from 0 to (length (estado-pecas-por-colocar estado))
-          do(cond ((eql (nth i (estado-pecas-por-colocar estado)) 'i) (setf pontuacaoMaxima (+ pontuacaoMaxima 300)))
-                  ((eql (nth i (estado-pecas-por-colocar estado)) 'j) (setf pontuacaoMaxima (+ pontuacaoMaxima 200)))
-                  ((eql (nth i (estado-pecas-por-colocar estado)) 'l) (setf pontuacaoMaxima (+ pontuacaoMaxima 200)))
-                  ((eql (nth i (estado-pecas-por-colocar estado)) 's) (setf pontuacaoMaxima (+ pontuacaoMaxima 100)))
-                  ((eql (nth i (estado-pecas-por-colocar estado)) 'z) (setf pontuacaoMaxima (+ pontuacaoMaxima 100)))
-                  ((eql (nth i (estado-pecas-por-colocar estado)) 't) (setf pontuacaoMaxima (+ pontuacaoMaxima 165)))
-                  ((eql (nth i (estado-pecas-por-colocar estado)) 'o) (setf pontuacaoMaxima (+ pontuacaoMaxima 165)))))
-    (return-from custo-ainda-a-perder pontuacaoMaxima)))
-
 ;;remove-de-lista: lista x inteiro -> lista
 (defun remove-de-lista (lista inteiro)
   (let ((contador 0)
@@ -261,12 +248,32 @@
       (remove-de-lista-aux lista))
     (return-from remove-de-lista new-lista)))
 
+;;gera-estados-pp: estado/accao X accoes X resultado -> lista
+(defun gera-estados-pp (par-estado-accao accoes resultado)
+  (let ((lista-de-estados ())
+        (lista-de-accoes  (funcall accoes (nth 0 par-estado-accao))))
+    (loop for i from 0 to (1- (list-length lista-de-accoes))
+          do(setf lista-de-estados (append (make-list 1 :initial-element (list (funcall resultado (nth 0 par-estado-accao) (nth i lista-de-accoes))
+                                                                         (append (nth 1 par-estado-accao) (list (nth i lista-de-accoes))))) lista-de-estados)))
+   (return-from gera-estados-pp lista-de-estados)))
+
+;;procura-pp: problema -> lista
+(defun procura-pp (problema)
+  (let ((accoes               (problema-accoes problema))
+        (resultado            (problema-resultado problema))
+        (solucao              (problema-solucao problema))
+        (estados-por-avaliar  (make-list 1 :initial-element (list (problema-estado-inicial problema) ())))
+        (par-estado-accao     0))
+        (loop while (not (eql estados-por-avaliar nil)) do
+              (progn (setf par-estado-accao (first estados-por-avaliar))
+                     (setf estados-por-avaliar (rest estados-por-avaliar))
+                     (when (funcall solucao (nth 0 par-estado-accao)) (return-from procura-pp (nth 1 par-estado-accao)))
+                     (setf estados-por-avaliar (append (gera-estados-pp par-estado-accao accoes resultado) estados-por-avaliar))))
+        (return-from procura-pp nil)))
+
 ;;avaliacao_f: estado x heuristica x custo-caminho -> inteiro
 (defun avaliacao_f (estado heuristica custo-caminho)
-  ;;(princ (funcall heuristica estado))
-   ;;(format t "~C"#\linefeed)
   (+ (funcall heuristica estado) (funcall custo-caminho estado)))
-
 
 ;;melhor-estado: lista_de_estados x heuristica x custo-caminho -> inteiro
 (defun melhor-estado (lista-de-estados)
@@ -315,89 +322,103 @@
     (return-from procura-A* nil)))
 
 ;;heuristica-de-pesos: estado -> inteiro
+;;heuristica que devolve um valor baseado no numero de buracos e
+;;no relevo do tabuleiro
 (defun heuristica-de-pesos (estado-a-testar)
   (let ((tabuleiro-resultante (copia-tabuleiro (estado-tabuleiro estado-a-testar)))
-        ;;(a   0.510066)
-        ;;(b   -0.760666)
-        (c   100) ;;175
-        (d   60)  ;;60
-        ;;(peso-agregado 0)
-        ;;(linhas-completas 0)
+        (c   175) ;;175
+        (d   65)  ;;60
         (relevo 0)
         (buraco 0)
         (aux-buraco-bool 0)
         (pos-preenchida nil))
-    ;;peso-agregado/relevo/buracos
+    ;;relevo/buracos
     (loop for i from 0 to 9 do
           (progn (when (/= i 9) (setf relevo (+ relevo (abs (- (tabuleiro-altura-coluna tabuleiro-resultante i) (tabuleiro-altura-coluna tabuleiro-resultante (+ 1 i)))))))
-                 
                  ;;contar buracos
                  (loop for j from 0 to (1- (tabuleiro-altura-coluna tabuleiro-resultante i)) do
-                       (progn (setf pos-preenchida (tabuleiro-preenchido-p tabuleiro-resultante (- (1- (tabuleiro-altura-coluna tabuleiro-resultante i)) j) i)) 
-                              (cond ((and (= aux-buraco-bool 0) (not pos-preenchida)) (progn (incf buraco) (setf aux-buraco-bool 1))) 
+                       (progn (setf pos-preenchida (tabuleiro-preenchido-p tabuleiro-resultante (- (1- (tabuleiro-altura-coluna tabuleiro-resultante i)) j) i))
+                              (cond ((and (= aux-buraco-bool 0) (not pos-preenchida)) (progn (incf buraco) (setf aux-buraco-bool 1)))
                                     ((and (= aux-buraco-bool 1) pos-preenchida) (setf aux-buraco-bool 0)))))))
-    ;;linhas-completas)
-    ;;(loop for i from 0 to 17 do
-    ;;    (when (tabuleiro-linha-completa-p tabuleiro-resultante i) (incf linhas-completas)))
     (return-from heuristica-de-pesos (+ (* c buraco) (* d relevo)))))
 
-;;heuristica-best: estado -> inteiro
-(defun heuristica-best (estado)
-  (+ (* 0.8 (custo-ainda-a-perder estado))  (* 0.2 (heuristica-media-alturas estado))))
+;;heuristica-custo-ainda-a-perder: estado -> inteiro
+;;heuristica que devolve um valor baseado nas pecas que
+;;ainda podem ser colocadas
+(defun heuristica-custo-ainda-a-perder (estado)
+  (let ((pontuacaoMaxima 0))
+    (loop for i from 0 to (length (estado-pecas-por-colocar estado))
+          do(cond ((eql (nth i (estado-pecas-por-colocar estado)) 'i) (setf pontuacaoMaxima (+ pontuacaoMaxima 300)))
+                  ((eql (nth i (estado-pecas-por-colocar estado)) 'j) (setf pontuacaoMaxima (+ pontuacaoMaxima 200)))
+                  ((eql (nth i (estado-pecas-por-colocar estado)) 'l) (setf pontuacaoMaxima (+ pontuacaoMaxima 200)))
+                  ((eql (nth i (estado-pecas-por-colocar estado)) 's) (setf pontuacaoMaxima (+ pontuacaoMaxima 100)))
+                  ((eql (nth i (estado-pecas-por-colocar estado)) 'z) (setf pontuacaoMaxima (+ pontuacaoMaxima 100)))
+                  ((eql (nth i (estado-pecas-por-colocar estado)) 't) (setf pontuacaoMaxima (+ pontuacaoMaxima 165)))
+                  ((eql (nth i (estado-pecas-por-colocar estado)) 'o) (setf pontuacaoMaxima (+ pontuacaoMaxima 165)))))
+    (return-from heuristica-custo-ainda-a-perder pontuacaoMaxima)))
 
+;;heuristica-best: estado -> inteiro
+;;combinacao linear de heuristicas
+(defun heuristica-best (estado)
+  (+ (* 0.8 (heuristica-custo-ainda-a-perder estado))  (* 0.2 (heuristica-media-alturas estado))))
+
+;;heuristica-media-alturas: estado -> inteiro
+;;heuristica que devolve uma media das alturas do estado
 (defun heuristica-media-alturas (estado)
   (let ((altura-media 0))
     (loop for i from 0 to 9 do
       (setf altura-media (+ altura-media (tabuleiro-altura-coluna  (estado-tabuleiro estado) i))))
     (return-from heuristica-media-alturas (* 100 (/ altura-media 10)))))
 
+;;heuristica-pontuacao-possivel: estado -> inteiro
+;;devolve a pontuacao maxima que o estado pode gerar
 (defun heuristica-pontuacao-possivel (estado)
   (let ((peca (first (estado-pecas-por-colocar estado))))
-    (cond ((eql peca 'i)  800)
-          ((eql peca 'j)  500)
-          ((eql peca 'l)  500)
-          ((eql peca 's)  300)
-          ((eql peca 'z)  300)
-          ((eql peca 't)  300)
-          ((eql peca 'o)  300)
-          (t 0)
-      )))
+    (cond ((eql peca 'i)  -800)
+          ((eql peca 'j)  -500)
+          ((eql peca 'l)  -500)
+          ((eql peca 's)  -300)
+          ((eql peca 'z)  -300)
+          ((eql peca 't)  -300)
+          ((eql peca 'o)  -300)
+          (t 0))))
 
+;;linhas-geradas: tabuleiro x accao -> inteiro
+;;Devolve o maior numero de linhas completas que as proximas accoes
+;;aplicadas sobre o estado passado como argumento podem originar
 (defun linhas-geradas (tabuleiro accao)
   (let ((linha 0)
         (coluna (accao-coluna accao))
         (peca (accao-peca accao))
         (linhas-completas 0)
         (tabuleiro-novo (copia-tabuleiro tabuleiro)))
-      (setf linha (altura-colocar-peca peca tabuleiro-novo coluna))
-      (loop while (and (> linha 0) (descer peca linha coluna tabuleiro-novo)) do
+    (setf linha (altura-colocar-peca peca tabuleiro-novo coluna))
+    (loop while (and (> linha 0) (descer peca linha coluna tabuleiro-novo)) do
           (setf linha (- linha 1)))
-      (loop for i from 0 to (1- (array-dimension peca 0))
+    (loop for i from 0 to (1- (array-dimension peca 0))
           do (loop for j from 0 to (1- (array-dimension peca 1))
                    do(when (aref peca i j) (tabuleiro-preenche! tabuleiro-novo (+ i linha) (+ j coluna)))))
-      (when (tabuleiro-topo-preenchido-p tabuleiro-novo)
-        (return-from linhas-geradas linhas-completas))
-      (loop for i from 0 to 17
-            do(when (tabuleiro-linha-completa-p tabuleiro-novo (- 17 i)) (setf linhas-completas (1+ linhas-completas))))
-      (return-from linhas-geradas linhas-completas)))
+    (when (tabuleiro-topo-preenchido-p tabuleiro-novo)
+      (return-from linhas-geradas linhas-completas))
+    (loop for i from 0 to 17
+          do(when (tabuleiro-linha-completa-p tabuleiro-novo (- 17 i)) (setf linhas-completas (1+ linhas-completas))))
+    (return-from linhas-geradas linhas-completas)))
 
-
+;;heuristica-possiveis-linhas: estado -> inteiro
+;;Devolve o numero maximo de pontos que um estado por vir a originar
 (defun heuristica-possiveis-linhas (estado)
   (let ((tabuleiro (copia-tabuleiro (estado-tabuleiro estado)))
         (lista-de-accoes (accoes estado))
         (linhas-completas 0)
         (linhas-gen 0))
     (when (not (eql lista-de-accoes nil))
-        (loop for i from 0 to (1- (list-length lista-de-accoes)) do
-          (progn  (setf linhas-gen (linhas-geradas tabuleiro (nth i lista-de-accoes)))
-                (when (< linhas-completas linhas-gen) (setf linhas-completas linhas-gen)))))
-  (cond ((=  linhas-completas 0) 0)
-        ((=  linhas-completas 1) -100)
-        ((=  linhas-completas 2) -300)
-        ((>= linhas-completas 3) -500))))
-
-(defun heuristica-pontos-altura (estado)
-  (+ (heuristica-media-alturas estado) (* (heuristica-pontuacao-possivel estado) -1)))
+      (loop for i from 0 to (1- (list-length lista-de-accoes)) do
+            (progn  (setf linhas-gen (linhas-geradas tabuleiro (nth i lista-de-accoes)))
+                    (when (< linhas-completas linhas-gen) (setf linhas-completas linhas-gen)))))
+    (cond ((=  linhas-completas 0) 0)
+          ((=  linhas-completas 1) 100)
+          ((=  linhas-completas 2) 300)
+          ((>= linhas-completas 3) 500))))
 
 ;;procura-best: array x lista -> lista
 (defun procura-best (array-tabuleiro pecas-por-colocar)
@@ -408,6 +429,5 @@
                                       :custo-caminho #'custo-oportunidade)))
     (procura-A* problema-novo #'heuristica-de-pesos)))
 
-;;(load (compile-file "utils.lisp"))
 (load "utils.fas")
 ;;#'(lambda (x) (estado-pontos x) (+ 0 0))
